@@ -43,7 +43,7 @@ export class PowerRow extends React.Component<CommonRowProps, PowerRowState> {
 
 const powerStyles: StyleSheet.NamedStyles<any> = {
     powerRow: {
-        flex: 0.5,
+        flex: 0.3,
         padding: 10
     },
     powerButton: {
@@ -62,7 +62,10 @@ const powerStyles: StyleSheet.NamedStyles<any> = {
 };
 
 type InputButtonProps = {
+    id: string;
+    name: string;
 
+    onPress: Function;
 };
 
 class InputButton extends React.Component<InputButtonProps> {
@@ -71,30 +74,50 @@ class InputButton extends React.Component<InputButtonProps> {
     }
 
     render() {
-        
+        const { id, name, onPress} = this.props;
+        return (
+            <TouchableOpacity style={styles.inputButton} onPress={() => onPress()}>
+                <Text style={styles.inputButtonName}>{name}</Text>
+                <Text style={styles.inputButtonId}>{id}</Text>
+            </TouchableOpacity>
+        );
     }
 }
 
-type InputRowState = {};
+type InputRowState = {
+    currentInput: string;
+};
 
-export class InputRow extends React.Component<CommonRowProps> {
+export class InputRow extends React.Component<CommonRowProps, InputRowState> {
     constructor(props: CommonRowProps) {
         super(props);
+        this.state = {
+            currentInput: props.avr.status.currentInput
+        };
     }
 
     render() {
-        // const { currentInput, inputLeft, inputRight } = this.props;
+        const identity = () => {};
         return (
             <View style={styles.inputRow}>
-                <Text>Current input UR MOM</Text>
-                {/*<View style={styles.inputButtons}>*/}
-                {/*    <View style={styles.inputButtonContainer}>*/}
-                {/*        <Button title="<--" onPress={() => inputLeft()} />*/}
-                {/*    </View>*/}
-                {/*    <View style={styles.inputButtonContainer}>*/}
-                {/*        <Button title="-->" onPress={() => inputRight()} />*/}
-                {/*    </View>*/}
-                {/*</View>*/}
+                <View style={styles.currentInputRow}>
+                    <Text style={{ fontSize: 20 }}>{this.state.currentInput}</Text>
+                </View>
+                <View style={styles.inputButtonRow}>
+                    <InputButton id={'aaaaaa'} name={'Spotify'} onPress={identity} />
+                    <InputButton id={'aaaaaa'} name={'Bluetooth'} onPress={identity} />
+                    <InputButton id={'aaaaaa'} name={'Playstation'} onPress={identity} />
+                </View>
+                <View style={styles.inputButtonRow}>
+                    <InputButton id={'aaaaaa'} name={'Spotify'} onPress={identity} />
+                    <InputButton id={'aaaaaa'} name={'Bluetooth'} onPress={identity} />
+                    <InputButton id={'aaaaaa'} name={'Playstation'} onPress={identity} />
+                </View>
+                <View style={styles.inputButtonRow}>
+                    <InputButton id={'aaaaaa'} name={'Spotify'} onPress={identity} />
+                    <InputButton id={'aaaaaa'} name={'Bluetooth'} onPress={identity} />
+                    <InputButton id={'aaaaaa'} name={'Playstation'} onPress={identity} />
+                </View>
             </View>
         );
     }
@@ -103,13 +126,34 @@ export class InputRow extends React.Component<CommonRowProps> {
 const inputStyles: StyleSheet.NamedStyles<any> = {
     inputRow: {
         backgroundColor: '#646464',
+        paddingBottom: 5,
         flex: 3
     },
-    inputButtons: {
-        flexDirection: 'row'
+    currentInputRow: {
+        flex: 0.5,
+        justifyContent: 'center',
+        alignItems: 'center'
     },
-    inputButtonContainer: {
-        flex: 1
+    inputButtonRow: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        padding: 3
+    },
+    inputButton: {
+        backgroundColor: '#323232',
+        borderRadius: 10,
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        width: 130
+    },
+    inputButtonName: {
+        fontSize: 20,
+        color: 'white'
+    },
+    inputButtonId: {
+        fontSize: 16,
+        color: 'white'
     }
 }
 

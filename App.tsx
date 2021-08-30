@@ -34,7 +34,6 @@ class App extends React.Component<AppProps, AppState> {
                 <Text>Loading</Text>
             </View>
         }
-        console.log('Rendering anyway with st: ', this.avr.status);
         return (
             <View style={styles.container}>
                 <PowerRow avr={this.avr} />

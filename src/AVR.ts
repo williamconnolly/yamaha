@@ -70,7 +70,6 @@ export class AVR {
 
     togglePower(cb: Function) {
         this._GET(ZONE, 'setPower?power=toggle').then(() => {
-            // TODO go grab status and check
             this.status.isOn = !this.status.isOn;
             cb(this.status.isOn);
         });
@@ -78,7 +77,6 @@ export class AVR {
 
     setVolume(volume: number, cb: Function) {
         this._GET(ZONE, `setVolume?volume=${volume}`).then((response) => {
-            console.log('Finished setting volume ', response);
             this.status.volume = volume;
             cb(this.status.volume);
         });
