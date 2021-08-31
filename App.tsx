@@ -22,8 +22,7 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     componentDidMount() {
-        this.avr.updateStatus(() => {
-            console.log('Loaded');
+        this.avr.initialize(() => {
             this.setState({ isLoaded: true });
         });
     }

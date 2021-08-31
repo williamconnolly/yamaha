@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { AVR, MAX_VOLUME, VOLUME_INCREMENT } from './AVR';
+import { AVR, INPUT_ROWS, MAX_VOLUME, VOLUME_INCREMENT } from './AVR';
 
 export type CommonRowProps = {
     avr: AVR
@@ -64,6 +64,7 @@ const powerStyles: StyleSheet.NamedStyles<any> = {
 type InputButtonProps = {
     id: string;
     name: string;
+    isCurrentInput: boolean;
 
     onPress: Function;
 };
@@ -74,9 +75,14 @@ class InputButton extends React.Component<InputButtonProps> {
     }
 
     render() {
-        const { id, name, onPress} = this.props;
+        const { id, name, isCurrentInput, onPress } = this.props;
+
+        const buttonStyle = [styles.inputButton];
+        if (isCurrentInput) {
+            buttonStyle.push(styles.currentInput);
+        }
         return (
-            <TouchableOpacity style={styles.inputButton} onPress={() => onPress()}>
+            <TouchableOpacity style={buttonStyle} onPress={() => onPress()}>
                 <Text style={styles.inputButtonName}>{name}</Text>
                 <Text style={styles.inputButtonId}>{id}</Text>
             </TouchableOpacity>
@@ -96,28 +102,35 @@ export class InputRow extends React.Component<CommonRowProps, InputRowState> {
         };
     }
 
+    setInput(id: string) {
+        this.props.avr.setInput(id, (currentInput: string) => {
+            this.setState({ currentInput });
+        })
+    }
+
+    renderRow(items: Array<string>) {
+        const inputNames = this.props.avr.status.inputNames;
+        const currentInput = this.state.currentInput;
+        return (
+            <View key={items.toString()} style={styles.inputButtonRow}>
+                {items.map((id) =>
+                    <InputButton key={id}
+                                 id={id}
+                                 name={inputNames[id]}
+                                 isCurrentInput={id === currentInput}
+                                 onPress={() => this.setInput(id)} />
+                )}
+            </View>
+        )
+    }
+
     render() {
-        const identity = () => {};
         return (
             <View style={styles.inputRow}>
                 <View style={styles.currentInputRow}>
                     <Text style={{ fontSize: 20 }}>{this.state.currentInput}</Text>
                 </View>
-                <View style={styles.inputButtonRow}>
-                    <InputButton id={'aaaaaa'} name={'Spotify'} onPress={identity} />
-                    <InputButton id={'aaaaaa'} name={'Bluetooth'} onPress={identity} />
-                    <InputButton id={'aaaaaa'} name={'Playstation'} onPress={identity} />
-                </View>
-                <View style={styles.inputButtonRow}>
-                    <InputButton id={'aaaaaa'} name={'Spotify'} onPress={identity} />
-                    <InputButton id={'aaaaaa'} name={'Bluetooth'} onPress={identity} />
-                    <InputButton id={'aaaaaa'} name={'Playstation'} onPress={identity} />
-                </View>
-                <View style={styles.inputButtonRow}>
-                    <InputButton id={'aaaaaa'} name={'Spotify'} onPress={identity} />
-                    <InputButton id={'aaaaaa'} name={'Bluetooth'} onPress={identity} />
-                    <InputButton id={'aaaaaa'} name={'Playstation'} onPress={identity} />
-                </View>
+                {INPUT_ROWS.map((items) => this.renderRow(items))}
             </View>
         );
     }
@@ -137,7 +150,7 @@ const inputStyles: StyleSheet.NamedStyles<any> = {
     inputButtonRow: {
         flex: 1,
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        justifyContent: 'flex-end',
         padding: 3
     },
     inputButton: {
@@ -145,7 +158,13 @@ const inputStyles: StyleSheet.NamedStyles<any> = {
         borderRadius: 10,
         justifyContent: 'space-around',
         alignItems: 'center',
-        width: 130
+        width: 130,
+        marginRight: 5
+    },
+    currentInput: {
+        backgroundColor: '#888888',
+        color: 'black',
+        fontWeight: 'bold'
     },
     inputButtonName: {
         fontSize: 20,
