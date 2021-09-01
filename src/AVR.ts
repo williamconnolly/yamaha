@@ -34,12 +34,13 @@ export type AVRInput = {
     text: string;
 }
 
+export type NameMap = { [id: string]: string };
+
 export type Status = {
     isOn: boolean;
     volume: number,
     mute: boolean,
     currentInput: string,
-    inputNames: { [id: string]: string };
 };
 
 function mapStatus(json: any): Status {
@@ -47,18 +48,19 @@ function mapStatus(json: any): Status {
         isOn: json.power === PowerMode.ON,
         volume: json.volume,
         mute: json.mute,
-        currentInput: json.input,
-        inputNames: {}
+        currentInput: json.input
     }
 }
 
 export class AVR {
     ip: string;
     status: Status;
+    inputNames: NameMap;
 
     constructor() {
         this.ip = '192.168.7.96';
         this.status = mapStatus({});
+        this.inputNames = {};
     }
 
     _url(...components: Array<string>): string {
@@ -85,14 +87,13 @@ export class AVR {
     getInputs(cb: Function) {
         this._GET('system', 'getNameText').then(body => {
             const inputs: Array<AVRInput> = body.input_list;
-            this.status.inputNames = inputs.filter(input => ALL_INPUT_IDS.includes(input.id))
+            this.inputNames = inputs.filter(input => ALL_INPUT_IDS.includes(input.id))
                 .reduce((map, current) => {
                     return {
                         ...map,
                         [current.id]: current.text
                     }
                 }, {});
-            console.log('input names: ', this.status.inputNames);
             cb();
         });
     }

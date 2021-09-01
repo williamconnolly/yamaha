@@ -109,7 +109,7 @@ export class InputRow extends React.Component<CommonRowProps, InputRowState> {
     }
 
     renderRow(items: Array<string>) {
-        const inputNames = this.props.avr.status.inputNames;
+        const inputNames = this.props.avr.inputNames;
         const currentInput = this.state.currentInput;
         return (
             <View key={items.toString()} style={styles.inputButtonRow}>
