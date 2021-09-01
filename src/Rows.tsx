@@ -1,7 +1,7 @@
 import React from 'react';
-import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AppState, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { AVR, INPUT_ROWS, MAX_VOLUME, VOLUME_INCREMENT } from './AVR';
+import { AVR, INPUT_ROWS, MAX_VOLUME, Status, VOLUME_INCREMENT } from './AVR';
 
 export type CommonRowProps = {
     avr: AVR
@@ -185,7 +185,18 @@ export class VolumeRow extends React.Component<CommonRowProps, VolumeRowState> {
         super(props);
         this.state = {
             volume: props.avr.status.volume
-        }
+        };
+
+        AppState.addEventListener(
+            "change",
+            nextAppState => {
+                if (nextAppState === "active") {
+                    this.props.avr.updateStatus((status: Status) => {
+                        this.setState({ volume: status.volume });
+                    });
+                }
+            }
+        );
     }
 
     setVolume = (volume: number) => {
@@ -214,10 +225,11 @@ export class VolumeRow extends React.Component<CommonRowProps, VolumeRowState> {
 
     render() {
         const volume = this.state.volume;
+        const volumePercentage = Math.round((volume / MAX_VOLUME) * 100);
         return (
             <View style={styles.volumeRow}>
                 <View style={{ flex: 0.7, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={styles.currentVolume}>{volume}</Text>
+                    <Text style={styles.currentVolume}>{volumePercentage}%</Text>
                 </View>
                 <View style={styles.volumeButtonsContainer}>
                     <TouchableOpacity style={styles.volumeButton} onPress={this.volumeDown}>

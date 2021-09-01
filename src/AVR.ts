@@ -78,7 +78,7 @@ export class AVR {
     updateStatus(cb: Function) {
         this._GET(ZONE, 'getStatus').then(status => {
             this.status = mapStatus(status);
-            cb();
+            cb(status);
         });
     }
 
