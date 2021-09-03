@@ -10,12 +10,29 @@ export type PowerRowState = {
     isOn: boolean;
 }
 
+function registerOnActivate(callback: () => void) {
+    AppState.addEventListener(
+        'change',
+        nextAppState => {
+            if (nextAppState === 'active') {
+                callback();
+            }
+        }
+    );
+}
+
 export class PowerRow extends React.Component<CommonRowProps, PowerRowState> {
     constructor(props: CommonRowProps) {
         super(props);
         this.state = {
             isOn: props.avr.status.isOn
         };
+
+        registerOnActivate(() => {
+            this.props.avr.updateStatus((status: Status) => {
+                this.setState({ isOn: status.isOn });
+            });
+        });
     }
 
     togglePower() {
@@ -187,16 +204,11 @@ export class VolumeRow extends React.Component<CommonRowProps, VolumeRowState> {
             volume: props.avr.status.volume
         };
 
-        AppState.addEventListener(
-            "change",
-            nextAppState => {
-                if (nextAppState === "active") {
-                    this.props.avr.updateStatus((status: Status) => {
-                        this.setState({ volume: status.volume });
-                    });
-                }
-            }
-        );
+        registerOnActivate(() => {
+            this.props.avr.updateStatus((status: Status) => {
+                this.setState({ volume: status.volume });
+            });
+        });
     }
 
     setVolume = (volume: number) => {
