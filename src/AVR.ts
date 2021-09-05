@@ -5,7 +5,7 @@ export const MAX_VOLUME = 161;
 
 export enum PowerMode {
     ON = 'on',
-    OFF = 'standby'
+    STANDBY = 'standby'
 }
 
 // export type InputOption = {
@@ -34,87 +34,81 @@ export type AVRInput = {
     text: string;
 }
 
-export type NameMap = { [id: string]: string };
+export type AVRInputNameMap = { [id: string]: string };
 
-export type Status = {
+export type AVRStatus = {
     isOn: boolean;
     volume: number,
-    mute: boolean,
+    isMute: boolean,
     currentInput: string,
 };
 
-function mapStatus(json: any): Status {
+type Callback = () => void;
+
+function mapStatus(json: any): AVRStatus {
     return {
         isOn: json.power === PowerMode.ON,
+        isMute: json.mute,
         volume: json.volume,
-        mute: json.mute,
         currentInput: json.input
     }
 }
 
 export class AVR {
     ip: string;
-    status: Status;
-    inputNames: NameMap;
 
     constructor() {
         this.ip = '192.168.7.96';
-        this.status = mapStatus({});
-        this.inputNames = {};
     }
 
-    _url(...components: Array<string>): string {
-        return [`http://${this.ip}`, 'YamahaExtendedControl/v1', ...components].join('/');
+    GET(...components: Array<string>): Promise<any> {
+        const url = [`http://${this.ip}`, 'YamahaExtendedControl/v1', ...components].join('/');
+        return fetch(url).then(response => response.json());
     }
 
-    _GET(...components: Array<string>): Promise<any> {
-        return fetch(this._url(...components)).then(response => response.json());
-    }
-
-    initialize(cb: Function) {
-        this.updateStatus(() => {
-            this.getInputs(cb);
+    getStatus(cb: (status: AVRStatus) => void) {
+        this.GET(ZONE, 'getStatus').then(status => {
+            cb(mapStatus(status));
         });
     }
 
-    updateStatus(cb: Function) {
-        this._GET(ZONE, 'getStatus').then(status => {
-            this.status = mapStatus(status);
-            cb(status);
-        });
-    }
-
-    getInputs(cb: Function) {
-        this._GET('system', 'getNameText').then(body => {
+    getInputs(cb: (inputs: AVRInputNameMap) => void) {
+        this.GET('system', 'getNameText').then(body => {
             const inputs: Array<AVRInput> = body.input_list;
-            this.inputNames = inputs.filter(input => ALL_INPUT_IDS.includes(input.id))
+            const inputNameMap: AVRInputNameMap = inputs
+                .filter(input => ALL_INPUT_IDS.includes(input.id))
                 .reduce((map, current) => {
                     return {
                         ...map,
                         [current.id]: current.text
                     }
                 }, {});
+            cb(inputNameMap);
+        });
+    }
+
+    setInput(input: string, cb: Callback) {
+        this.GET(ZONE, `setInput?input=${input}`).then(() => {
             cb();
         });
     }
 
-    setInput(input: string, cb: Function) {
-        this._GET(ZONE, `setInput?input=${input}`).then(() => {
-            cb(input);
+    setPower(isOn: boolean, cb: Callback) {
+        const mode = isOn ? PowerMode.ON : PowerMode.STANDBY;
+        this.GET(ZONE, `setPower?power=${mode}`).then(() => {
+            cb();
         });
     }
 
-    togglePower(cb: Function) {
-        this._GET(ZONE, 'setPower?power=toggle').then(() => {
-            this.status.isOn = !this.status.isOn;
-            cb(this.status.isOn);
+    setMute(isMute: boolean, cb: Callback) {
+        this.GET(ZONE, `setMute?enable=${isMute}`).then(() => {
+            cb();
         });
     }
 
-    setVolume(volume: number, cb: Function) {
-        this._GET(ZONE, `setVolume?volume=${volume}`).then((response) => {
-            this.status.volume = volume;
-            cb(this.status.volume);
+    setVolume(volume: number, cb: Callback) {
+        this.GET(ZONE, `setVolume?volume=${volume}`).then(() => {
+            cb();
         });
     }
 }
