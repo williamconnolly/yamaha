@@ -8,7 +8,7 @@ type VolumeRowProps = {
     volume: number;
     isMute: boolean;
 
-    setVolume: (volume: number) => void;
+    setVolumeIfAllowed: (volume: number) => Promise<boolean>;
     toggleMute: () => void;
 };
 
@@ -24,17 +24,18 @@ export default class VolumeRow extends React.Component<VolumeRowProps, VolumeRow
         };
     }
 
-    setVolume = (volume: number) => {
-        this.props.setVolume(volume);
-        this.setState({ volume });
+    setVolume = async (requestedVolume: number) => {
+        const { volume, setVolumeIfAllowed } = this.props;
+        const actualVolume = await setVolumeIfAllowed(requestedVolume) ? requestedVolume : volume;
+        this.setState({ volume: actualVolume });
     };
 
-    volumeUp = () => {
-        this.setVolume(this.state.volume + VOLUME_INCREMENT);
+    volumeUp = async () => {
+        await this.setVolume(this.state.volume + VOLUME_INCREMENT);
     };
 
-    volumeDown = () => {
-        this.setVolume(this.state.volume - VOLUME_INCREMENT);
+    volumeDown = async () => {
+        await this.setVolume(this.state.volume - VOLUME_INCREMENT);
     };
 
     toggleMute = () => {
@@ -47,10 +48,7 @@ export default class VolumeRow extends React.Component<VolumeRowProps, VolumeRow
 
     renderMuteButton() {
         const isMute = this.props.isMute;
-        const muteButtonStyles: Array<StyleProp<any>> = [styles.muteButton];
-        if (isMute) {
-            muteButtonStyles.push(styles.muteButtonMuted);
-        }
+        const muteButtonStyles = [styles.muteButton, isMute && styles.muteButtonMuted];
         return (
             <TouchableOpacity style={muteButtonStyles} onPress={this.toggleMute}>
                 <Text style={styles.muteButtonText}>{isMute ? "Unmute" : "Mute"}</Text>

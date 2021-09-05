@@ -66,14 +66,14 @@ export class AVR {
         return fetch(url).then(response => response.json());
     }
 
-    getStatus(cb: (status: AVRStatus) => void) {
-        this.GET(ZONE, 'getStatus').then(status => {
-            cb(mapStatus(status));
+    async getStatus(): Promise<AVRStatus> {
+        return this.GET(ZONE, 'getStatus').then(status => {
+            return mapStatus(status);
         });
     }
 
-    getInputs(cb: (inputs: AVRInputNameMap) => void) {
-        this.GET('system', 'getNameText').then(body => {
+    async getInputs(): Promise<AVRInputNameMap> {
+        return this.GET('system', 'getNameText').then(body => {
             const inputs: Array<AVRInput> = body.input_list;
             const inputNameMap: AVRInputNameMap = inputs
                 .filter(input => ALL_INPUT_IDS.includes(input.id))
@@ -83,32 +83,24 @@ export class AVR {
                         [current.id]: current.text
                     }
                 }, {});
-            cb(inputNameMap);
+            return inputNameMap;
         });
     }
 
-    setInput(input: string, cb: Callback) {
-        this.GET(ZONE, `setInput?input=${input}`).then(() => {
-            cb();
-        });
+    async setInput(input: string): Promise<void> {
+        return this.GET(ZONE, `setInput?input=${input}`);
     }
 
-    setPower(isOn: boolean, cb: Callback) {
+    async setPower(isOn: boolean): Promise<void> {
         const mode = isOn ? PowerMode.ON : PowerMode.STANDBY;
-        this.GET(ZONE, `setPower?power=${mode}`).then(() => {
-            cb();
-        });
+        return this.GET(ZONE, `setPower?power=${mode}`);
     }
 
-    setMute(isMute: boolean, cb: Callback) {
-        this.GET(ZONE, `setMute?enable=${isMute}`).then(() => {
-            cb();
-        });
+    async setMute(isMute: boolean): Promise<void> {
+        return this.GET(ZONE, `setMute?enable=${isMute}`);
     }
 
-    setVolume(volume: number, cb: Callback) {
-        this.GET(ZONE, `setVolume?volume=${volume}`).then(() => {
-            cb();
-        });
+    async setVolume(volume: number): Promise<void> {
+        return this.GET(ZONE, `setVolume?volume=${volume}`);
     }
 }

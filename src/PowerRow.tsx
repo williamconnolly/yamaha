@@ -14,10 +14,7 @@ export default class PowerRow extends React.Component<PowerRowProps> {
     render() {
         const { isOn, togglePower } = this.props;
         const toggleTitle = isOn ? 'Turn Off' : 'Turn On';
-        const buttonStyles: Array<StyleProp<any>> = [styles.powerButton];
-        if (!isOn) {
-            buttonStyles.push(styles.powerButtonGreen);
-        }
+        const buttonStyles: Array<StyleProp<any>> = [styles.powerButton, isOn && styles.powerButtonGreen];
         return (
             <View style={styles.powerRow}>
                 <TouchableOpacity onPress={togglePower} style={buttonStyles}>

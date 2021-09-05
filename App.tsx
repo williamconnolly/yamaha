@@ -1,12 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { produce } from 'immer';
-import { AppState as ReactNativeAppState, StyleSheet, View, Text } from 'react-native';
+import { AppState as ReactNativeAppState, StyleSheet, Vibration, View, Text } from 'react-native';
+import FlashMessage, { MessageOptions, showMessage } from 'react-native-flash-message';
 import { AVR, AVRInputNameMap, AVRStatus } from './src/AVR';
 import VolumeRow from './src/VolumeRow';
 import PowerRow from './src/PowerRow';
 import InputRow from './src/InputRow';
-
 
 type AppProps = {};
 type AppState = {
@@ -26,6 +26,26 @@ function registerOnActivate(callback: () => void) {
     );
 }
 
+const MESSAGE_OPTIONS: MessageOptions = {
+    message: 'Turn on AVR First',
+    type: 'danger',
+    hideOnPress: true,
+    style: {
+        width: 300,
+        height: 150,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    titleStyle: {
+        fontSize: 24,
+        lineHeight: 30,
+        fontWeight: 'bold',
+        marginTop: 15,
+        // alignItems: 'center',
+        // justifyContent: 'center'
+    }
+};
+
 class App extends React.Component<AppProps, AppState> {
     avr: AVR;
 
@@ -44,61 +64,71 @@ class App extends React.Component<AppProps, AppState> {
         this.avr = new AVR();
     }
 
-    componentDidMount() {
-        this.avr.getStatus(status => {
-            this.avr.getInputs(inputs => {
-                this.setState({
-                    isLoaded: true,
-                    status,
-                    inputs
-                });
+    async componentDidMount() {
+        const status = await this.avr.getStatus();
+        const inputs = await this.avr.getInputs();
+        this.setState({
+            isLoaded: true,
+            status,
+            inputs
+        });
+
+        // in case manually changed with remote while app is in background
+        registerOnActivate(async () => {
+            this.setState({
+                status: await this.avr.getStatus()
             });
         });
-        // in case manually changed with remote while app is in background
-        registerOnActivate(() => {
-            this.avr.getStatus(status => {
-                this.setState({ status });
-            });
-        })
     }
 
-    togglePower = () => {
+    checkAllowed(checkIsOn: boolean): boolean {
+        if (checkIsOn && !this.state.status.isOn) {
+            Vibration.vibrate(500);
+            showMessage(MESSAGE_OPTIONS);
+            return false;
+        }
+        Vibration.vibrate(100);
+        return true;
+    }
+
+    async togglePower() {
+        this.checkAllowed(false);
         const isOn = !this.state.status.isOn;
-        this.avr.setPower(isOn, () => {
-            this.setState(produce(this.state, (draftState) => {
-                draftState.status.isOn = isOn;
-                return draftState;
-            }));
-        })
-    };
+        await this.avr.setPower(isOn);
+        this.setState(produce(this.state, (draftState) => {
+            draftState.status.isOn = isOn;
+            return draftState;
+        }));
+    }
 
-    toggleMute = () => {
+    async toggleMute() {
+        if (!this.checkAllowed(true)) return;
         const isMute = !this.state.status.isMute;
-        this.avr.setMute(isMute, () => {
-            this.setState(produce(this.state, (draftState) => {
-                draftState.status.isMute = isMute;
-                return draftState;
-            }));
-        })
-    };
+        await this.avr.setMute(isMute);
+        this.setState(produce(this.state, (draftState) => {
+            draftState.status.isMute = isMute;
+            return draftState;
+        }));
+    }
 
-    setVolume = (volume: number) => {
-        this.avr.setVolume(volume, () => {
-            this.setState(produce(this.state, (draftState) => {
-                draftState.status.volume = volume;
-                return draftState;
-            }));
-        })
-    };
+    async setVolume(volume: number): Promise<boolean> {
+        if (!this.checkAllowed(true)) return false;
+        await this.avr.setVolume(volume)
+        this.setState(produce(this.state, (draftState) => {
+            draftState.status.volume = volume;
+            return draftState;
+        }));
+        return true;
+    }
 
-    setInput = (input: string) => {
-        this.avr.setInput(input, () => {
-            this.setState(produce(this.state, (draftState) => {
-                draftState.status.currentInput = input;
-                return draftState;
-            }));
-        })
-    };
+    async setInput(input: string) {
+        if (!this.checkAllowed(true)) return;
+        await this.avr.setInput(input);
+        this.setState(produce(this.state, (draftState) => {
+            draftState.status.currentInput = input;
+            return draftState;
+        }));
+    }
 
     render() {
         if (!this.state.isLoaded) {
@@ -110,17 +140,18 @@ class App extends React.Component<AppProps, AppState> {
         const inputs = this.state.inputs;
         return (
             <View style={styles.container}>
+                <FlashMessage position={'center'} />
                 <PowerRow isOn={isOn}
-                          togglePower={this.togglePower}
+                          togglePower={() => this.togglePower()}
                 />
                 <InputRow currentInput={currentInput}
                           inputs={inputs}
-                          setInput={this.setInput}
+                          setInput={input => this.setInput(input)}
                 />
                 <VolumeRow volume={volume}
                            isMute={isMute}
-                           setVolume={this.setVolume}
-                           toggleMute={this.toggleMute}
+                           setVolumeIfAllowed={volume => this.setVolume(volume)}
+                           toggleMute={() => this.toggleMute()}
                 />
                 <StatusBar style="auto" />
             </View>
