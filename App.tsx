@@ -1,19 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { produce } from 'immer';
-import { AppState as ReactNativeAppState, StyleSheet, Vibration, View, Text } from 'react-native';
+import { AppState as ReactNativeAppState, StyleSheet, Vibration, View, Text, TouchableOpacity } from 'react-native';
 import FlashMessage, { MessageOptions, showMessage } from 'react-native-flash-message';
 import { AVR, AVRInputNameMap, AVRStatus } from './src/AVR';
 import VolumeRow from './src/VolumeRow';
 import PowerRow from './src/PowerRow';
 import InputRow from './src/InputRow';
-
-type AppProps = {};
-type AppState = {
-    isLoaded: boolean;
-    status: AVRStatus,
-    inputs: AVRInputNameMap
-}
 
 function registerOnActivate(callback: () => void) {
     ReactNativeAppState.addEventListener(
@@ -40,11 +33,17 @@ const MESSAGE_OPTIONS: MessageOptions = {
         fontSize: 24,
         lineHeight: 30,
         fontWeight: 'bold',
-        marginTop: 15,
-        // alignItems: 'center',
-        // justifyContent: 'center'
+        marginTop: 15
     }
 };
+
+type AppProps = {};
+type AppState = {
+    isLoaded: boolean;
+    isError: boolean;
+    status: AVRStatus,
+    inputs: AVRInputNameMap
+}
 
 class App extends React.Component<AppProps, AppState> {
     avr: AVR;
@@ -53,6 +52,7 @@ class App extends React.Component<AppProps, AppState> {
         super(props);
         this.state = {
             isLoaded: false,
+            isError: false,
             status: {
                 isOn: false,
                 volume: 0,
@@ -65,20 +65,42 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     async componentDidMount() {
-        const status = await this.avr.getStatus();
-        const inputs = await this.avr.getInputs();
-        this.setState({
-            isLoaded: true,
-            status,
-            inputs
-        });
+        if (!await this.tryInitialize()) {
+            return;
+        }
 
         // in case manually changed with remote while app is in background
         registerOnActivate(async () => {
-            this.setState({
-                status: await this.avr.getStatus()
-            });
+            await this.tryInitialize();
         });
+    }
+
+    async tryInitialize() {
+        const status = await this.avr.getStatus();
+        if (!status) {
+            this.setState({
+                isError: true,
+                isLoaded: false
+            });
+            return false;
+        }
+
+        const inputs = await this.avr.getInputs();
+        if (!inputs) {
+            this.setState({
+                isError: true,
+                isLoaded: false
+            });
+            return false;
+        }
+
+        this.setState({
+            isLoaded: true,
+            isError: false,
+            status,
+            inputs
+        });
+        return true;
     }
 
     checkAllowed(checkIsOn: boolean): boolean {
@@ -131,10 +153,22 @@ class App extends React.Component<AppProps, AppState> {
     }
 
     render() {
+        if (this.state.isError) {
+            return (
+                <View style={styles.sadContainer}>
+                    <Text style={styles.sadMessage}>Error connecting to AVR</Text>
+                    <TouchableOpacity style={styles.reloadButton}>
+                        <Text style={styles.reloadButtonText}>Reload</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
         if (!this.state.isLoaded) {
-            return <View style={styles.container}>
-                <Text>Loading</Text>
-            </View>
+            return (
+                <View style={styles.sadContainer}>
+                    <Text style={styles.sadMessage}>Loading...</Text>
+                </View>
+            );
         }
         const { currentInput, isOn, isMute, volume } = this.state.status;
         const inputs = this.state.inputs;
@@ -164,6 +198,30 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingTop: 50,
         backgroundColor: '#323232'
+    },
+    sadContainer: {
+        flex: 1,
+        backgroundColor: '#323232',
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    sadMessage: {
+        fontSize: 32,
+        color: 'white'
+    },
+    reloadButton: {
+        borderRadius: 5,
+        backgroundColor: '#aa1111',
+        marginTop: 20,
+        width: 250,
+        height: 75,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    reloadButtonText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: 'white'
     }
 });
 
