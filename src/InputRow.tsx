@@ -10,26 +10,20 @@ type InputButtonProps = {
     onPress: () => void;
 };
 
-class InputButton extends React.Component<InputButtonProps> {
-    constructor(props: InputButtonProps) {
-        super(props);
-    }
+const InputButton = (props: InputButtonProps) => {
+    const { id, name, isCurrentInput, onPress } = props;
 
-    render() {
-        const { id, name, isCurrentInput, onPress } = this.props;
-
-        const buttonStyle: Array<StyleProp<any>> = [styles.inputButton];
-        if (isCurrentInput) {
-            buttonStyle.push(styles.currentInput);
-        }
-        return (
-            <TouchableOpacity style={buttonStyle} onPress={() => onPress()}>
-                <Text style={styles.inputButtonName}>{name}</Text>
-                <Text style={styles.inputButtonId}>{id}</Text>
-            </TouchableOpacity>
-        );
+    const buttonStyle: Array<StyleProp<any>> = [styles.inputButton];
+    if (isCurrentInput) {
+        buttonStyle.push(styles.currentInput);
     }
-}
+    return (
+        <TouchableOpacity style={buttonStyle} onPress={() => onPress()}>
+            <Text style={styles.inputButtonName}>{name}</Text>
+            <Text style={styles.inputButtonId}>{id}</Text>
+        </TouchableOpacity>
+    );
+};
 
 type InputRowProps = {
     currentInput: string;
@@ -37,42 +31,33 @@ type InputRowProps = {
     setInput: (input: string) => void;
 }
 
-export default class InputRow extends React.Component<InputRowProps> {
-    constructor(props: InputRowProps) {
-        super(props);
-    }
+const InputRow = (props: InputRowProps) => {
+    const { currentInput, inputs, setInput } = props;
 
-    setInput(id: string) {
-        this.props.setInput(id);
-    }
+    const inputButtons = INPUT_ROWS.map((items) =>
+        <View key={items.toString()} style={styles.inputButtonRow}>
+            {items.map((id) =>
+                <InputButton key={id}
+                             id={id}
+                             name={inputs[id]}
+                             isCurrentInput={id === currentInput}
+                             onPress={() => setInput(id)} />
+            )}
+        </View>
+    );
 
-    renderRow(items: Array<string>) {
-        const { inputs, currentInput } = this.props;
-        return (
-            <View key={items.toString()} style={styles.inputButtonRow}>
-                {items.map((id) =>
-                    <InputButton key={id}
-                                 id={id}
-                                 name={inputs[id]}
-                                 isCurrentInput={id === currentInput}
-                                 onPress={() => this.setInput(id)} />
-                )}
+    const currentInputName = inputs[currentInput];
+    return (
+        <View style={styles.inputRow}>
+            <View style={styles.currentInputRow}>
+                <Text style={{ fontSize: 32 }}>{currentInputName}</Text>
             </View>
-        )
-    }
+            {inputButtons}
+        </View>
+    );
+};
 
-    render() {
-        const currentInputName = this.props.inputs[this.props.currentInput];
-        return (
-            <View style={styles.inputRow}>
-                <View style={styles.currentInputRow}>
-                    <Text style={{ fontSize: 32 }}>{currentInputName}</Text>
-                </View>
-                {INPUT_ROWS.map((items) => this.renderRow(items))}
-            </View>
-        );
-    }
-}
+export default InputRow;
 
 const styles = StyleSheet.create({
     inputRow: {

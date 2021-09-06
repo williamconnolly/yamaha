@@ -6,7 +6,19 @@ export type PowerRowProps = {
     togglePower: () => void;
 };
 
-export default class PowerRow extends React.Component<PowerRowProps> {
+export default function PowerRow({ isOn, togglePower }: PowerRowProps) {
+    const toggleTitle = isOn ? 'Turn Off' : 'Turn On';
+    const buttonStyles: Array<StyleProp<any>> = [styles.powerButton, isOn && styles.powerButtonGreen];
+    return (
+        <View style={styles.powerRow}>
+            <TouchableOpacity onPress={togglePower} style={buttonStyles}>
+                <Text style={styles.powerButtonLabel}>{toggleTitle}</Text>
+            </TouchableOpacity>
+        </View>
+    );
+}
+
+export class PowerRowOld extends React.Component<PowerRowProps> {
     constructor(props: PowerRowProps) {
         super(props);
     }
